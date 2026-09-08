@@ -1,0 +1,3 @@
+display_name: Pterodactyl CLI
+short_description: Rust CLI/TUI client for Pterodactyl Panel & Wings
+default_prompt: Follow the pterodactyl-cli skill for this Pterodactyl-Cli workspace — respect crate contracts, use ptero-core for IO, and pick Client/Application/Remote credentials per surface.

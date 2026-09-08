@@ -1,0 +1,19 @@
+[package]
+name = "ptero"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pterodactyl CLI/TUI binary"
+publish = false
+
+[[bin]]
+name = "ptero"
+path = "src/main.rs"
+
+[dependencies]
+ptero-cli = { workspace = true }
+ptero-tui = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing-subscriber = { workspace = true }
