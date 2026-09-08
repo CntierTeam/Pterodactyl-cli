@@ -33,7 +33,8 @@ jobs:
           - os: macos-latest
             artifact: ptero-macos-arm64
             bin: ptero
-          - os: macos-13
+          # macos-13 retired Dec 2025; macos-15-intel is the last hosted x86_64 mac runner.
+          - os: macos-15-intel
             artifact: ptero-macos-amd64
             bin: ptero
     steps:
