@@ -149,7 +149,7 @@ ptero terminal attach <id>
 
 ## Codex Skill
 
-项目内 skill：[`skills/pterodactyl-cli/`](skills/pterodactyl-cli/)
+项目内 skill：[`skills/pterodactyl-cli/`](skills/pterodactyl-cli/) — **用法/运维**（如何用 `ptero` 对接面板：安装、配置、CLI/TUI 工作流），不是开发扩展指南。
 
 ```bash
 ./scripts/install-codex-skill.sh        # 复制到 ~/.codex/skills/pterodactyl-cli
