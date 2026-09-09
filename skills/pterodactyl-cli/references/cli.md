@@ -1,9 +1,9 @@
 # CLI command tree
 
-Do not invent subcommands. Confirm with `ptero <cmd> --help`.
+Skill 为 execute-first 操作员代跑；本文件是准确命令树备查，不是替代 shell 执行。不要发明子命令；不确定跑 `ptero <cmd> --help`。
 
 ```text
-ptero                          # TUI (no subcommand)
+ptero                          # TUI（无子命令）
 ptero --help
 
 ptero config show|path|set-url|set-client-key|set-app-key|set-daemon-token
@@ -19,14 +19,9 @@ ptero file list|contents|download|write|rename|copy|compress|decompress
              |delete|mkdir|chmod|pull|upload-url
 
 ptero db list|create|rotate|delete
-
-ptero schedule list|get|create|update|execute|delete
-                 |task-create|task-update|task-delete
-
+ptero schedule list|get|create|update|execute|delete|task-create|task-update|task-delete
 ptero network list|create|notes|primary|delete
-
 ptero subuser list|get|create|update|delete
-
 ptero backup list|get|create|download|lock|restore|delete
 
 ptero terminal attach
@@ -56,7 +51,7 @@ ptero remote sftp-auth|servers|servers-reset|activity|server
 | `--app-key` | `PTERO_APP_KEY` | Application API |
 | `--daemon-token` | `PTERO_DAEMON_TOKEN` | Remote |
 | `--json` | — | JSON stdout |
-| `--config` | — | Config file path |
+| `--config` | — | Config path |
 
 ## Examples
 
@@ -66,10 +61,7 @@ ptero remote sftp-auth|servers|servers-reset|activity|server
 ptero --url https://panel.example.com --client-key ptlc_... server list --json
 ptero server get <id>
 ptero server resources <id> --json
-ptero server power <id> start
-ptero server power <id> stop
-ptero server power <id> restart
-ptero server power <id> kill
+ptero server power <id> start|stop|restart|kill
 ptero server command <id> "list"
 ptero server rename <id> "New Name" --description "…"
 ptero server startup <id> --json
@@ -98,9 +90,7 @@ ptero terminal attach <id>
 ptero account get --json
 ```
 
-Power signals: `start`, `stop`, `restart`, `kill`.
-
-Server id: short identifier or UUID as returned by `server list` (Panel accepts either for Client routes).
+Server id：`server list` 返回的短 id 或 UUID（Client 路由均可）。
 
 ### Application
 
@@ -119,7 +109,7 @@ ptero app server unsuspend <id>
 ptero app server delete <id> --force
 ```
 
-Bodies for `create` / `update` / `details` / `build` / `startup` follow the Panel **Application API** schemas — copy from Panel docs or a known-good `--json` GET, do not invent fields.
+`create` / `update` / `details` / `build` / `startup` 的 body 跟 Panel **Application API** schema；从 Panel 文档或已知良好的 `--json` GET 复制字段，不要臆造。
 
 ### Remote
 
@@ -131,4 +121,4 @@ ptero remote install-complete <uuid> --successful true
 ptero remote sftp-auth <username> <password>
 ```
 
-Requires node daemon token (`id.secret`), not `ptlc_` / `ptla_`.
+需要 node daemon token（`id.secret`），不是 `ptlc_` / `ptla_`。

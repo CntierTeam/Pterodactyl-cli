@@ -1,41 +1,52 @@
-# Auth surfaces
+# Auth surfaces（产品）
 
-`ptero` talks to three Panel API prefixes. Use the matching credential or requests fail.
+Skill 为 execute-first 操作员代跑；本文件是鉴权/config 备查，不是替代 shell 执行。
 
-| Surface | Path prefix | Credential | Header |
-|---------|-------------|------------|--------|
-| **Client** | `/api/client` | Client API key `ptlc_…` | `Authorization: Bearer <key>` |
-| **Application** | `/api/application` | Application API key `ptla_…` | `Authorization: Bearer <key>` |
-| **Remote** | `/api/remote` | Node daemon token `id.secret` | `Authorization: Bearer <id>.<secret>` |
+`ptero` 对应 Panel 三个 API 前缀，必须用匹配凭证：
 
-Accept header (handled by the client): `Application/vnd.pterodactyl.v1+json`.
+| Surface | Path | Credential | Header |
+|---------|------|------------|--------|
+| **Client** | `/api/client` | `ptlc_…` | `Authorization: Bearer <key>` |
+| **Application** | `/api/application` | `ptla_…` | `Authorization: Bearer <key>` |
+| **Remote** | `/api/remote` | node daemon `id.secret` | `Authorization: Bearer <id>.<secret>` |
 
-## Which commands need which key
+Accept（客户端已处理）：`Application/vnd.pterodactyl.v1+json`。
 
-| Need | Credential | Top-level commands |
-|------|------------|--------------------|
-| Own account, servers you can access, files, console | Client (`ptlc_`) | `account`, `server`, `file`, `db`, `schedule`, `network`, `subuser`, `backup`, `terminal` |
-| Panel admin: users, nodes, locations, create servers, nests/eggs | Application (`ptla_`) | `app …` |
-| Wings/node daemon-facing remote endpoints | Daemon token (`id.secret`) | `remote …` |
+## 命令 ↔ 密钥
 
-You can store all three in config; only the relevant one is sent per command family.
+| Need | Credential | Top-level |
+|------|------------|-----------|
+| 自己的账户 / 可访问服务器 / 文件 / 控制台 | Client `ptlc_` | `account` `server` `file` `db` `schedule` `network` `subuser` `backup` `terminal` |
+| 面板管理：用户、节点、建服、nests/eggs | Application `ptla_` | `app …` |
+| Wings/node daemon Remote | Daemon `id.secret` | `remote …` |
 
-## Where keys come from
+三套可同时写入 config；按命令族只发送对应那一套。
 
-- **Client / Application keys:** Panel → Account (or Admin) → API Credentials. Create with appropriate permissions.
-- **Daemon token:** Node configuration / Wings config (`token_id` + `token` → `id.secret`). Not a `ptl*` user key.
+## 密钥来源
 
-## Config readiness
+- **Client / Application**：Panel → Account（或 Admin）→ API Credentials。
+- **Daemon token**：节点 / Wings 配置（`token_id` + `token` → `id.secret`）。不是 `ptl*` 用户 key。
+
+## 推荐写入
 
 ```bash
+ptero config set-url https://panel.example.com
+ptero config set-client-key ptlc_...
+ptero config set-app-key ptla_...           # 可选
+ptero config set-daemon-token id.secret     # 可选
 ptero config show
 ```
 
-TUI Help (`5`) shows whether client / app / remote credentials are set (not the secret values).
+One-shot（尽量少把密钥留在 shell history）：
 
-## Operational tips
+```bash
+ptero --url https://panel.example.com --client-key KEY server list --json
+```
 
-- Prefer saving keys with `ptero config set-client-key` / `set-app-key` / `set-daemon-token` once.
-- For scripts, env vars (`PTERO_CLIENT_KEY`, etc.) beat putting secrets on the argv that ends up in `ps`/history — still treat env as sensitive.
-- Websocket console: Client API returns `{ data: { token, socket } }`; `ptero terminal attach` uses that path for you.
-- China / 翼龙 panels: same Client/Application/Remote model; set `--url` to that panel’s HTTPS origin.
+Env：`PTERO_URL` `PTERO_CLIENT_KEY` `PTERO_APP_KEY` `PTERO_DAEMON_TOKEN`（仍视为敏感）。
+
+## 操作提示
+
+- TUI Help（`5`）只显示 Client/App/Remote **是否已配置**，不显示密文。
+- Websocket 控制台：Client API 返回 `{ data: { token, socket } }`；`ptero terminal attach` 已封装该路径。
+- 翼龙等中国 Panel：同一三面模型；`--url` 用该面板 HTTPS origin。

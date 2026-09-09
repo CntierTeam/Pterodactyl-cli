@@ -1,237 +1,132 @@
 ---
 name: pterodactyl-cli
 description: >-
-  Use and operate Pterodactyl / 翼龙 Panel via the `ptero` binary (TUI with no args,
-  CLI with subcommands). Covers install, config keys (Client / Application / Remote),
-  common panel workflows (servers, power, files, terminal, app admin), and TUI keys.
-  Trigger on: ptero, Pterodactyl-Cli, Pterodactyl Panel, 翼龙, Wings console,
-  client/app/remote API keys, panel server list/power/files/terminal.
-license: MIT
+  Operate Pterodactyl / 翼龙 Panel via the `ptero` binary by running it for the
+  user (TUI with no args, CLI with subcommands). Covers install, config keys
+  (Client / Application / Remote), common panel workflows (servers, power,
+  files, terminal, app admin), and TUI keys. Prefer shell execution over pasting
+  recipes. Trigger on: ptero, Pterodactyl-Cli, Pterodactyl Panel, 翼龙, Wings
+  console, client/app/remote API keys, panel server list/power/files/terminal.
+license: GPL-3.0-only
 metadata:
-  short-description: Operate Pterodactyl Panel with ptero CLI/TUI
+  short-description: 代跑 ptero（面板服务器/文件/终端）
 ---
 
-# Pterodactyl-Cli (`ptero`) — usage & operations
+# Pterodactyl-Cli (`ptero`)
 
-Operate a [Pterodactyl Panel](https://github.com/pterodactyl/panel) (including
-[pterodactyl-china/panel](https://github.com/pterodactyl-china/panel) / 翼龙) with the
-`ptero` CLI/TUI. Repo: https://github.com/CntierTeam/Pterodactyl-cli
+产品：**`ptero`** — [Pterodactyl Panel](https://github.com/pterodactyl/panel)（含 [翼龙](https://github.com/pterodactyl-china/panel)）的 CLI/TUI 客户端。
 
-**This skill is for using the tool against a panel — not for extending the Rust crates.**
-Contributors: see the repo `README.md` and `docs/`.
+你是 **操作员**：用户要装客户端、配面板、列服务器、开关机、管文件、挂 Wings 控制台、跑 Application/Remote → **自己在 shell 执行 `ptero`**，不要只拼命令给用户。
 
-## When to use
+本 skill 是 **execute-first**：代跑产品，不是开发 Rust crates。细节命令树见 [references/cli.md](references/cli.md)；鉴权见 [references/auth.md](references/auth.md)。
 
-Trigger when the user wants to:
+Repo: https://github.com/CntierTeam/Pterodactyl-cli
 
-- Install or upgrade `ptero`
-- Point `ptero` at a panel URL and API keys
-- List / power / rename servers, manage files, DBs, schedules, backups
-- Attach to Wings console (`terminal attach` or TUI)
-- Use Application API admin flows (`ptero app …`) or Remote/daemon flows (`ptero remote …`)
+## Agent 硬规则
 
-## Hard rules (agent)
+1. **执行优先**：能跑就跑。二进制：`ptero` 或 `~/.local/bin/ptero`；没有就先装（见下方 Install）。
+2. **禁止**用「组装指令 / 操作手册 / SAMPLE / YOUR_CLI / 长篇理科说明」代替执行。短句说明 → 立刻跑 → 根据输出继续。
+3. **无参数 → TUI**；**有子命令 → CLI**。Agent 代控优先 **CLI + `--json`**；用户明确要全屏 UI 再开 `ptero`。
+4. 命令名永远 **`ptero`**，禁止 `SAMPLE` / `YOUR_CLI`。缺 URL 或对应密钥时只问缺的那一项，问完继续跑。
+5. **不要发明 flags/endpoints**。不确定就跑 `ptero <cmd> --help`，以输出和 [references/cli.md](references/cli.md) 为准。
+6. **选对鉴权面**：Client `ptlc_…` / Application `ptla_…` / Remote `id.secret`。错面 → 401/403。见 [references/auth.md](references/auth.md)。
+7. **Secrets**：不回显完整 API key / daemon token；优先 `ptero config set-*` 一次写入。破坏性操作（`power kill`、`reinstall`、`delete`、`backup restore`、app server delete）意图不清时先确认。
+8. 真机意图就真跑 Panel；不要默认改成「只能帮你写命令」。
 
-1. **No args → TUI**; **any subcommand → CLI**. Prefer CLI + `--json` for automation.
-2. **Do not invent flags or endpoints.** Truth: `ptero <cmd> --help` and [references/cli.md](references/cli.md).
-3. Prefer **`--json`** for machine-readable output; parse that instead of guessing fields.
-4. Pick the right **auth surface** (Client / Application / Remote) — see [references/auth.md](references/auth.md). Wrong key → 401/403.
-5. **Secrets:** never echo full API keys or daemon tokens into chat logs, commit messages, or pasted command history. Prefer `ptero config set-*` once, then omit keys from later commands. If a one-shot flag is required, redact in summaries.
-6. Destructive actions (`power kill`, `reinstall`, `delete`, `backup restore`, app server delete) — confirm intent with the user when ambiguous.
-7. User-facing replies follow the user's language.
+## 标准代跑流
 
-## Install
+```bash
+command -v ptero || ~/.local/bin/ptero --help
+ptero config show || true
+ptero server list --json
+```
 
-Binary name: `ptero`. Prebuilts: [Releases](https://github.com/CntierTeam/Pterodactyl-cli/releases)
-(`main` pushes update **Continuous** pre-release; `v*` tags = stable).
+未配置则先（按需写入对应密钥，摘要里 redact）：
 
-### Linux / macOS
+```bash
+ptero config set-url 'https://panel.example.com'
+ptero config set-client-key 'ptlc_...'      # 多数用户工作流
+ptero config set-app-key 'ptla_...'         # 管理员 Application
+ptero config set-daemon-token 'id.secret'   # Remote / Wings node
+ptero config show
+```
 
-Stable (latest non-prerelease) → `~/.local/bin`:
+## 意图 → 怎么跑
+
+| 用户意图 | 执行 |
+|----------|------|
+| 装 / 升级客户端 | 跑下方 install，再 `ptero --help` |
+| 配 URL / 密钥 | `config set-url` / `set-client-key` / `set-app-key` / `set-daemon-token` / `show` |
+| 列服务器 / 详情 / 资源 | `server list\|get\|resources --json` |
+| 开 / 停 / 重启 / 强杀 | `server power <id> start\|stop\|restart\|kill` |
+| 发控制台命令 | `server command <id> "say hello"` |
+| 挂 Wings 控制台 | `terminal attach <id>`（或 TUI → Servers → Enter） |
+| 文件 | `file list\|contents\|write\|mkdir\|compress\|pull …` |
+| DB / 计划 / 网络 / 子用户 / 备份 | `db` / `schedule` / `network` / `subuser` / `backup` |
+| 账户 / API keys | `account get\|api-keys\|activity --json` |
+| Application 管理 | `app user\|node\|location\|server\|nest\|egg …`（要 `ptla_`） |
+| Remote / daemon | `remote servers\|server\|install …`（要 `id.secret`） |
+| 要 TUI | 启动无参 `ptero`，并告知键位 |
+
+## Install（仅当本机没有 ptero）
+
+Prebuilts: [Releases](https://github.com/CntierTeam/Pterodactyl-cli/releases)（`main` → Continuous；`v*` → 正式版）。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CntierTeam/Pterodactyl-cli/main/scripts/install.sh | bash
-```
-
-Track Continuous from `main`:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/CntierTeam/Pterodactyl-cli/main/scripts/install.sh | bash -s -- --continuous
-```
-
-Pin version / custom prefix:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/CntierTeam/Pterodactyl-cli/main/scripts/install.sh | bash -s -- --version v0.1.0
-PREFIX=/usr/local curl -fsSL https://raw.githubusercontent.com/CntierTeam/Pterodactyl-cli/main/scripts/install.sh | bash
-```
-
-From a local clone: `./scripts/install.sh [--continuous|--version vX.Y.Z]`.
-
-Ensure `~/.local/bin` (or `$PREFIX/bin`) is on `PATH`, then:
-
-```bash
+# Continuous / pin:
+# bash -s -- --continuous
+# bash -s -- --version v0.1.0
 command -v ptero && ptero --help
 ```
 
-### Windows (PowerShell)
+Windows（PowerShell）：`irm …/install.ps1 | iex`（asset: **windows-amd64**）。
 
-Default install: `%LOCALAPPDATA%\Programs\ptero` (+ user PATH):
+## Config 速查
 
-```powershell
-irm https://raw.githubusercontent.com/CntierTeam/Pterodactyl-cli/main/scripts/install.ps1 | iex
-```
+默认：`~/.config/ptero/config.toml`（`ptero config path`）。
 
-Continuous / pin:
-
-```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/CntierTeam/Pterodactyl-cli/main/scripts/install.ps1))) -Continuous
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/CntierTeam/Pterodactyl-cli/main/scripts/install.ps1))) -Version v0.1.0
-```
-
-Local: `.\scripts\install.ps1 [-Continuous|-Version vX.Y.Z]`. Asset: **windows-amd64**.
-
-### From source (optional)
-
-```bash
-cargo build --release -p ptero
-./target/release/ptero --help
-# or: cargo install --path bin/ptero
-```
-
-## Config
-
-Default file: `~/.config/ptero/config.toml`
-
-```bash
-ptero config set-url https://panel.example.com
-ptero config set-client-key ptlc_...      # Client API — most user workflows
-ptero config set-app-key ptla_...         # Application API — admin
-ptero config set-daemon-token id.secret   # Remote / Wings node token
-ptero config show
-ptero config path
-```
-
-Overrides (flag → env → config file):
-
-| Flag | Env | Used for |
-|------|-----|----------|
+| Flag | Env | 用途 |
+|------|-----|------|
 | `--url` | `PTERO_URL` | Panel base URL |
-| `--client-key` | `PTERO_CLIENT_KEY` | `/api/client` |
-| `--app-key` | `PTERO_APP_KEY` | `/api/application` |
-| `--daemon-token` | `PTERO_DAEMON_TOKEN` | `/api/remote` |
-| `--json` | — | JSON output |
-| `--config` | — | Alternate config path |
+| `--client-key` | `PTERO_CLIENT_KEY` | `/api/client`（`ptlc_…`） |
+| `--app-key` | `PTERO_APP_KEY` | `/api/application`（`ptla_…`） |
+| `--daemon-token` | `PTERO_DAEMON_TOKEN` | `/api/remote`（`id.secret`） |
+| `--json` | — | JSON 输出 |
+| `--config` | — | 另一份 config |
 
-One-shot (avoid leaving keys in shell history when possible):
+One-shot：`ptero --url https://panel.example.com --client-key ptlc_... --json server list`
 
-```bash
-ptero --url https://panel.example.com --client-key ptlc_... --json server list
-```
+## Auth 面（速查）
 
-## Auth surfaces (quick)
-
-| Surface | Key shape | Commands |
-|---------|-----------|----------|
-| **Client** | `ptlc_…` | `account`, `server`, `file`, `db`, `schedule`, `network`, `subuser`, `backup`, `terminal` |
+| 面 | 密钥形态 | 命令族 |
+|----|----------|--------|
+| **Client** | `ptlc_…` | `account` `server` `file` `db` `schedule` `network` `subuser` `backup` `terminal` |
 | **Application** | `ptla_…` | `app user\|node\|location\|server\|nest\|egg` |
-| **Remote** | `id.secret` (node daemon) | `remote …` |
+| **Remote** | `id.secret` | `remote …` |
 
-Details: [references/auth.md](references/auth.md).
+细节：[references/auth.md](references/auth.md)。
 
-## Common workflows
-
-### List servers & power
-
-```bash
-ptero server list --json
-ptero server get <id|uuid>
-ptero server resources <id>
-ptero server power <id> start    # start | stop | restart | kill
-ptero server command <id> "say hello"
-```
-
-### Files
-
-```bash
-ptero file list <id> /
-ptero file contents <id> /server.properties
-ptero file write <id> /motd.txt --contents "hello"
-ptero file write <id> /foo.cfg --from-file ./local.cfg
-ptero file mkdir <id> / plugins
-ptero file compress <id> / --files "world,world_nether"
-ptero file pull <id> https://example.com/plugin.jar --directory /plugins
-```
-
-### Wings console
-
-```bash
-ptero terminal attach <id>
-# or TUI: ptero → 1 (Servers) → Enter
-ptero server websocket <id>   # credentials only (token + socket URL)
-```
-
-### Account / keys
-
-```bash
-ptero account get --json
-ptero account api-keys
-ptero account activity
-```
-
-### Application admin (needs `ptla_`)
-
-```bash
-ptero app user list --json
-ptero app node list --json
-ptero app nest list --json
-ptero app egg list <nest_id> --json
-ptero app server list --json
-ptero app server create --json-body '{"name":"…", …}'   # see Panel Application API docs for body
-ptero app server suspend <id>
-ptero app server unsuspend <id>
-```
-
-### Remote / daemon (needs `id.secret`)
-
-```bash
-ptero remote servers
-ptero remote server <uuid>
-ptero remote install <uuid>
-```
-
-Full tree + more examples: [references/cli.md](references/cli.md).
-
-## TUI
-
-```bash
-ptero    # no subcommand
-```
+## TUI 键位（用户自己玩时）
 
 | Key | Action |
 |-----|--------|
 | `0` | Home |
-| `1` | Servers (`j`/`k` or arrows; `o` start, `s` stop, `r` restart; Enter → terminal) |
+| `1` | Servers（`j`/`k`；`o` start / `s` stop / `r` restart；Enter → terminal） |
 | `2` | Account |
-| `3` | App Users (needs app key) |
-| `4` | App Nodes (needs app key) |
-| `5` / `h` / `?` | Help / Config status |
-| `R` | Refresh (non-terminal) |
-| `Esc` | Leave terminal screen |
-| `q` | Quit (not while typing in terminal) |
+| `3` / `4` | App Users / App Nodes（要 app key） |
+| `5` / `h` / `?` | Help / Config 状态 |
+| `R` | Refresh（非 terminal） |
+| Esc | 离开 terminal |
+| `q` | Quit（非输入中） |
 
-In terminal screen: type + Enter sends a console command; Esc returns to Servers.
+## Troubleshooting
 
-## Agent recipes
+| 症状 | 处理 |
+|------|------|
+| 未配置 / list 空 | `config set-url` + 对应 `set-*-key` |
+| 401 / 403 | 检查是否用错 Client / App / Remote 面 |
+| `terminal attach` 失败 | 确认 Client key + 服务器 id；先 `server websocket <id>` 看凭证是否返回 |
+| `ptero` not found | 装二进制并把 `~/.local/bin` 加 PATH |
 
-1. Resolve binary: `command -v ptero` (or `./target/release/ptero` after local build).
-2. Ensure URL + needed key: `ptero config show` (redact keys when reporting).
-3. Run the smallest command that answers the user; add `--json` for parsing.
-4. On auth errors, check surface mismatch (client vs app vs remote) before retrying.
-5. Do not invent REST paths — wrap `ptero` only.
-
-## References
-
-- Auth surfaces & when to use which key: [references/auth.md](references/auth.md)
-- CLI command tree & examples: [references/cli.md](references/cli.md)
-- Upstream Panel API: Pterodactyl Panel docs / your panel’s API keys page
+https://github.com/CntierTeam/Pterodactyl-cli
